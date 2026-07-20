@@ -1,9 +1,13 @@
 import numpy as np
 
+
+# S is a 1D list of singular values in descending order
+# U, Vt are the expected dimensions
+
 def svd(A):
 
     A = np.array(A)
-    U, S, Vt = np.linalg.svd(A)
+    U, S, Vt = np.linalg.svd(A, full_matrices=False)
 
     return U, S, Vt
 
@@ -31,3 +35,12 @@ def dot_product(a, b):
     b = np.array(b)
 
     return np.dot(a, b)
+
+# note: using @ in place of np.dot is more efficient (avoids nests when multiplying more than 2)
+
+def distance(A, B):
+
+    A=np.array(A)
+    B=np.array(B)
+
+    return np.linalg.norm(A-B, 'fro')
