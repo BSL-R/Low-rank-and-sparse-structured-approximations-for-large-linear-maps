@@ -89,4 +89,5 @@ def error_ranksize_plot(r, n):
     plt.title("Error against size (fixed rank)")
     plt.show()
 
-error_ranksize_plot(200,200)
+#error_ranksize_plot(100,100)
+#error_ranksize_plot(200,200)
