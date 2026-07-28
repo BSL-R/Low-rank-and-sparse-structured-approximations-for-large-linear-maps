@@ -1,6 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+VARIANCE_FORMULAS = {
+    np.random.normal: lambda loc, scale: scale**2,
+    np.random.uniform: lambda low, high: (high - low)**2 / 12,
+    np.random.poisson: lambda lam: lam,
+    np.random.binomial: lambda n, p: n * p * (1 - p),
+    np.random.gamma: lambda shape, scale: shape * scale**2,
+    np.random.exponential: lambda scale: scale**2,
+}
+
+def get_variance(dist, **dist_kwargs):
+    return VARIANCE_FORMULAS[dist](**dist_kwargs)
+
+###########################################################################################################################################################################
 
 
 def svd_optimal_rankr(A, r):
@@ -277,12 +290,110 @@ def svd_fixed_rank_perturbation_plot(A, r, num_perturbed, rotation=False):
         plt.title("Rank-r Perturbation Scatter")
         plt.show()
 
-   
-A = [[14,24,8], [54,12,63],[6,32,19]] 
-svd_fixed_rank_perturbation_plot(A,1,1500, ) 
-svd_fixed_rank_perturbation_plot(A,2,1500, True) 
-svd_fixed_rank_perturbation_plot(A,3,1500, True) 
 
+###########################################################################################################################################################################
+from scipy.integrate import quad
+from scipy.optimize import root_scalar
+
+# Marchenko-Patur Law investigation
+
+def mp_pdf(mu, lam, dist, **dist_kwargs):
+
+    sigma2 = get_variance(dist, **dist_kwargs)
+
+    mu_min = sigma2 * (1 - np.sqrt(lam))**2
+    mu_max = sigma2 * (1 + np.sqrt(lam))**2
+
+    if mu < mu_min or mu > mu_max:
+        return 0
+
+    numerator = np.sqrt((mu - mu_min) * (mu_max - mu))
+    denominator = 2 * np.pi * sigma2 * lam * mu
+    pdf = numerator / denominator
+
+    return pdf
+
+
+
+# To find mu_r numerically:
+def find_mu_r(r, m, lam, dist, **dist_kwargs):
+
+    sigma2 = get_variance(dist, **dist_kwargs)
+
+    mu_min = sigma2 * (1 - np.sqrt(lam))**2
+    mu_max = sigma2 * (1 + np.sqrt(lam))**2
+    
+    if r == 0:
+        return mu_max  
+    if r >= m:
+        return mu_min
+
+    def prob_above(upper_limit):
+        return quad(lambda mu: mp_pdf(mu, lam, dist, **dist_kwargs), upper_limit, mu_max)[0]
+    
+    # Want prob_above(mu_r) = r/m
+    target = r / m
+    # Tolerance
+    epsilon = 1e-6
+
+    result = root_scalar(
+        lambda mu: prob_above(mu) - target,
+        bracket=[mu_min + epsilon, mu_max - epsilon],
+        method='bisect'
+    )
+    
+    return result.root
+
+
+
+def theoretical_expected_squared_error(n, m, r, dist, **dist_kwargs):
+
+    sigma2 = get_variance(dist, **dist_kwargs)
+    lam = m / n
+    
+    if r == 0:
+        return n * m * sigma2
+    if r >= m:
+        return 0.0
+    
+    mu_r = find_mu_r(r, m, lam, dist, **dist_kwargs)
+    mu_min = sigma2 * (1 - np.sqrt(lam))**2
+    
+    integrand = lambda mu: mu * mp_pdf(mu, lam, dist, **dist_kwargs)
+    integral, _ = quad(integrand, mu_min, mu_r)
+
+    expected_error = n * m * integral
+
+    return expected_error
+
+
+
+def expected_error_empirical_verification(n, m, r, k, dist, **dist_kwargs):
+
+
+    matrix_list = dist(size=(k, n, m), **dist_kwargs)
+    error_list = np.array([svd_error_rankr(A, r)**2 for A in matrix_list])
+
+    mean_error = np.mean(error_list)
+
+    expected_error = theoretical_expected_squared_error(n, m, r, dist, **dist_kwargs)
+
+    print(f'expected square error = {expected_error}')
+    print(f'mean of squared error list = {mean_error}')
+    print(f'absolute difference of errors = {abs(expected_error - mean_error)}')
+
+
+    
+expected_error_empirical_verification(5, 4, 4, 1000, np.random.normal, loc=0, scale=1)
+
+
+
+
+
+
+
+###########################################################################################################################################################################
+   
 if __name__ == "__main__":
 # Testing on Gaussian matrices
 
@@ -300,3 +411,17 @@ if __name__ == "__main__":
     svd_fixed_rank_perturbation_plot(A,1,1500,) 
     svd_fixed_rank_perturbation_plot(A,2,1500,) 
     svd_fixed_rank_perturbation_plot(A,3,1500,) 
+
+    svd_fixed_rank_perturbation_plot(A,1,1500, True) 
+    svd_fixed_rank_perturbation_plot(A,2,1500, True) 
+    svd_fixed_rank_perturbation_plot(A,3,1500, True) 
+    svd_fixed_rank_perturbation_plot(A,1,1500, ) 
+    svd_fixed_rank_perturbation_plot(A,2,1500, ) 
+    svd_fixed_rank_perturbation_plot(A,3,1500, ) 
+
+    print(f'rank 0 expected suared error is: {theoretical_expected_squared_error(5,4, 0, np.random.normal, loc=0, scale=1)}')
+    print(f'rank 1 expected suared error is: {theoretical_expected_squared_error(5,4, 1, np.random.normal, loc=0, scale=1)}')
+    print(f'rank 2 expected suared error is: {theoretical_expected_squared_error(5,4, 2, np.random.normal, loc=0, scale=1)}')
+    print(f'rank 3 expected suared error is: {theoretical_expected_squared_error(5,4, 3, np.random.normal, loc=0, scale=1)}')
+    print(f'rank 4 expected suared error is: {theoretical_expected_squared_error(5,4, 4, np.random.normal, loc=0, scale=1)}')
+    
