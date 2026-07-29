@@ -346,7 +346,7 @@ def find_mu_r(r, m, lam, dist, **dist_kwargs):
 
 
 
-def theoretical_expected_squared_error(n, m, r, dist, **dist_kwargs):
+def expected_squared_error_theoretical(n, m, r, dist, **dist_kwargs):
 
     sigma2 = get_variance(dist, **dist_kwargs)
     lam = m / n
@@ -362,35 +362,32 @@ def theoretical_expected_squared_error(n, m, r, dist, **dist_kwargs):
     integrand = lambda mu: mu * mp_pdf(mu, lam, dist, **dist_kwargs)
     integral, _ = quad(integrand, mu_min, mu_r)
 
-    expected_error = n * m * integral
+    expected_error = (1 / lam) * integral
 
     return expected_error
 
 
 
-def expected_error_empirical_verification(n, m, r, k, dist, **dist_kwargs):
+def expected_squared_error_empirical_verification(n, m, r, k, dist, **dist_kwargs):
 
 
     matrix_list = dist(size=(k, n, m), **dist_kwargs)
     error_list = np.array([svd_error_rankr(A, r)**2 for A in matrix_list])
 
-    mean_error = np.mean(error_list)
+    mean_error = (1 / m) * np.mean(error_list)
 
-    expected_error = theoretical_expected_squared_error(n, m, r, dist, **dist_kwargs)
+    expected_error = expected_squared_error_theoretical(n, m, r, dist, **dist_kwargs)
 
     print(f'expected square error = {expected_error}')
     print(f'mean of squared error list = {mean_error}')
     print(f'absolute difference of errors = {abs(expected_error - mean_error)}')
 
 
-    
-expected_error_empirical_verification(5, 4, 4, 1000, np.random.normal, loc=0, scale=1)
-
-
-
-
-
-
+expected_squared_error_empirical_verification(5, 4, 0, 1000, np.random.normal, loc=0, scale=1)
+expected_squared_error_empirical_verification(5, 4, 1, 1000, np.random.normal, loc=0, scale=1)
+expected_squared_error_empirical_verification(5, 4, 2, 1000, np.random.normal, loc=0, scale=1)
+expected_squared_error_empirical_verification(5, 4, 3, 1000, np.random.normal, loc=0, scale=1)
+expected_squared_error_empirical_verification(5, 4, 4, 1000, np.random.normal, loc=0, scale=1)
 
 ###########################################################################################################################################################################
    
@@ -419,9 +416,14 @@ if __name__ == "__main__":
     svd_fixed_rank_perturbation_plot(A,2,1500, ) 
     svd_fixed_rank_perturbation_plot(A,3,1500, ) 
 
-    print(f'rank 0 expected suared error is: {theoretical_expected_squared_error(5,4, 0, np.random.normal, loc=0, scale=1)}')
-    print(f'rank 1 expected suared error is: {theoretical_expected_squared_error(5,4, 1, np.random.normal, loc=0, scale=1)}')
-    print(f'rank 2 expected suared error is: {theoretical_expected_squared_error(5,4, 2, np.random.normal, loc=0, scale=1)}')
-    print(f'rank 3 expected suared error is: {theoretical_expected_squared_error(5,4, 3, np.random.normal, loc=0, scale=1)}')
-    print(f'rank 4 expected suared error is: {theoretical_expected_squared_error(5,4, 4, np.random.normal, loc=0, scale=1)}')
-    
+    print(f'rank 0 expected suared error is: {expected_squared_error_theoretical(5,4, 0, np.random.normal, loc=0, scale=1)}')
+    print(f'rank 1 expected suared error is: {expected_squared_error_theoretical(5,4, 1, np.random.normal, loc=0, scale=1)}')
+    print(f'rank 2 expected suared error is: {expected_squared_error_theoretical(5,4, 2, np.random.normal, loc=0, scale=1)}')
+    print(f'rank 3 expected suared error is: {expected_squared_error_theoretical(5,4, 3, np.random.normal, loc=0, scale=1)}')
+    print(f'rank 4 expected suared error is: {expected_squared_error_theoretical(5,4, 4, np.random.normal, loc=0, scale=1)}')
+
+    expected_squared_error_empirical_verification(5, 4, 0, 1000, np.random.normal, loc=0, scale=1)
+    expected_squared_error_empirical_verification(5, 4, 1, 1000, np.random.normal, loc=0, scale=1)
+    expected_squared_error_empirical_verification(5, 4, 2, 1000, np.random.normal, loc=0, scale=1)
+    expected_squared_error_empirical_verification(5, 4, 3, 1000, np.random.normal, loc=0, scale=1)
+    expected_squared_error_empirical_verification(5, 4, 4, 1000, np.random.normal, loc=0, scale=1)
