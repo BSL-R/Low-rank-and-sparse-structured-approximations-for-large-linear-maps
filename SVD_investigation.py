@@ -87,7 +87,7 @@ def random_matrix(shape, dist, **dist_kwargs):
 
 # using normal distribution around optimal solution for perturbated matrices (any rank)
 # scaled variance so that perturbations are reasonable, S_r[0,0] is largest singular value
-def svd_free_rank_perturbation_plot(A, r, num_perturbed):
+def svd_free_rank_perturbation_plot(A, r, num_perturbed, **svd_type):
 
     """
     Generates scatter plot of perturbed matrices (with any rank) distance from A against distance from optimal rank-r approximation
@@ -368,8 +368,7 @@ def expected_squared_error_theoretical(n, m, r, dist, **dist_kwargs):
 
 
 
-def expected_squared_error_empirical_verification(n, m, r, k, dist, **dist_kwargs):
-
+def expected_squared_error_empirical_verification(n, m, r, k, dist, prnt=False, **dist_kwargs):
 
     matrix_list = dist(size=(k, n, m), **dist_kwargs)
     error_list = np.array([svd_error_rankr(A, r)**2 for A in matrix_list])
@@ -378,16 +377,29 @@ def expected_squared_error_empirical_verification(n, m, r, k, dist, **dist_kwarg
 
     expected_error = expected_squared_error_theoretical(n, m, r, dist, **dist_kwargs)
 
-    print(f'expected square error = {expected_error}')
-    print(f'mean of squared error list = {mean_error}')
-    print(f'absolute difference of errors = {abs(expected_error - mean_error)}')
+    abs_error_diff = abs(expected_error - mean_error)
 
+    if prnt:
+    
+        print(f'expected square error = {expected_error}')
+        print(f'mean of squared error list = {mean_error}')
+        print(f'absolute difference of errors = {abs_error_diff}')
 
-expected_squared_error_empirical_verification(5, 4, 0, 1000, np.random.normal, loc=0, scale=1)
-expected_squared_error_empirical_verification(5, 4, 1, 1000, np.random.normal, loc=0, scale=1)
-expected_squared_error_empirical_verification(5, 4, 2, 1000, np.random.normal, loc=0, scale=1)
-expected_squared_error_empirical_verification(5, 4, 3, 1000, np.random.normal, loc=0, scale=1)
-expected_squared_error_empirical_verification(5, 4, 4, 1000, np.random.normal, loc=0, scale=1)
+    return mean_error
+
+expected_squared_error_empirical_verification(5, 4, 0, 1000, np.random.normal, prnt=True, loc=0, scale=1)
+
+def expected_squared_error_empirical_verification_plot(n, m, r, trials_x100, dist, **dist_kwargs):
+
+    x_list = np.arange(100, 100*(trials_x100 + 1), 100)
+    y_list = np.array([expected_squared_error_empirical_verification(n, m, r, i, dist, **dist_kwargs) for i in x_list])
+
+    plt.scatter(x_list, y_list)
+    plt.xlabel("Number of trials")
+    plt.ylabel("Error")
+    plt.title("Empirical squared error vs. number of trials")
+    plt.show()
+
 
 ###########################################################################################################################################################################
    
@@ -422,8 +434,10 @@ if __name__ == "__main__":
     print(f'rank 3 expected suared error is: {expected_squared_error_theoretical(5,4, 3, np.random.normal, loc=0, scale=1)}')
     print(f'rank 4 expected suared error is: {expected_squared_error_theoretical(5,4, 4, np.random.normal, loc=0, scale=1)}')
 
-    expected_squared_error_empirical_verification(5, 4, 0, 1000, np.random.normal, loc=0, scale=1)
-    expected_squared_error_empirical_verification(5, 4, 1, 1000, np.random.normal, loc=0, scale=1)
-    expected_squared_error_empirical_verification(5, 4, 2, 1000, np.random.normal, loc=0, scale=1)
-    expected_squared_error_empirical_verification(5, 4, 3, 1000, np.random.normal, loc=0, scale=1)
-    expected_squared_error_empirical_verification(5, 4, 4, 1000, np.random.normal, loc=0, scale=1)
+    expected_squared_error_empirical_verification(5, 4, 0, 1000, np.random.normal, prnt=True, loc=0, scale=1)
+    expected_squared_error_empirical_verification(5, 4, 1, 1000, np.random.normal, prnt=True, loc=0, scale=1)
+    expected_squared_error_empirical_verification(5, 4, 2, 1000, np.random.normal, prnt=True, loc=0, scale=1)
+    expected_squared_error_empirical_verification(5, 4, 3, 1000, np.random.normal, prnt=True, loc=0, scale=1)
+    expected_squared_error_empirical_verification(5, 4, 4, 1000, np.random.normal, prnt=True, loc=0, scale=1)
+
+#   expected_squared_error_empirical_verification_plot(5, 4, 3, 500, np.random.normal, loc=0, scale=1)
