@@ -74,15 +74,16 @@ def error_ranksize_table_random(r_max, n_max, q, norm_type, dist, **dist_kwargs)
     rankr_error_table = np.array([ [svd_error_random(matrix_list[j], rank_list[i], q, norm_type) for j in range(n_max)] for i in range(r_max//2)])
 
     table = pd.DataFrame(rankr_error_table, index=rank_list, columns=size_list)
-
     print(table)
-
 
     plt.figure(figsize=(12, 6))
     plt.imshow(table, cmap="Reds", aspect="auto") 
     plt.colorbar(label="Error")
 
-
+    for i in range(table.shape[0]):
+        for j in range(table.shape[1]):
+            plt.text(j, i, f"{table.iloc[i, j]:.2f}",
+                    ha="center", va="center")
 
     plt.xticks(np.arange(len(table.columns)), table.columns, rotation=45)
     plt.yticks(np.arange(len(table.index)), table.index)
@@ -91,7 +92,7 @@ def error_ranksize_table_random(r_max, n_max, q, norm_type, dist, **dist_kwargs)
     plt.ylabel("rank")
     plt.title("Rank-r approximation error")
     plt.show()
-
+    
 
 
 
@@ -101,7 +102,17 @@ if __name__ == "__main__":
     A = svd.random_matrix((6,6), np.random.normal, loc=0, scale=1)
 
 
+    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=2, q=0)
+    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=2, q=1)
+    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=2, q=2)
 
+    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=4, q=0)
+    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=4, q=1)
+    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=4, q=2)
+
+    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=6, q=0)
+    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=6, q=1) 
+    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=6, q=2)  
 
     error_ranksize_table_random(5, 5, 2, 'fro', np.random.normal, loc=0, scale=1)
     error_ranksize_table_random(50, 50, 2, 'fro', np.random.normal, loc=0, scale=1)
