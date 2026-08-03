@@ -16,7 +16,7 @@ def get_variance(dist, **dist_kwargs):
 ###########################################################################################################################################################################
 
 
-def svd_optimal_rankr(A, r):
+def svd_optimal(A, r):
 # unique iff S[r-1]>S[r], otherwise any of the rth largest singular values chosen (depending on list S)
 
     """
@@ -48,7 +48,7 @@ def svd_optimal_rankr(A, r):
 
 
 
-def svd_error_rankr(A, r):
+def svd_error(A, norm_type, svd_type, **svd_type_kwargs):
 
     """
     Computes Frobenius distance of rank-r approximation and the original matrix
@@ -56,15 +56,19 @@ def svd_error_rankr(A, r):
     Parameters:
     A (nested list of depth 2): The original matrix 
     r (int): The rank of the approximation
+    norm_type: Norm to be used. eg: 'fro' (Frobenius), 2 (Spectral)
+    svd_type: SVD approx to be used. eg: 'svd_optimal' , 'svd_randomised'
+    **svd_type_kwargs: The required parameters for the chosen svd_type
 
     Returns:
-    error (float): The error in the Frobenius norm
+    error (float): The error in the 'norm_type' norm
     """
 
-    A_r, U_r, S_r, Vt_r = svd_optimal_rankr(A, r)
-    error = np.linalg.norm(A_r - A, 'fro')
+    A_r, U_r, S_r, Vt_r = svd_type(A, **svd_type_kwargs)
+    error = np.linalg.norm(A_r - A, norm_type)
 
     return error
+
 
 
 
@@ -87,31 +91,34 @@ def random_matrix(shape, dist, **dist_kwargs):
 
 # using normal distribution around optimal solution for perturbated matrices (any rank)
 # scaled variance so that perturbations are reasonable, S_r[0,0] is largest singular value
-def svd_free_rank_perturbation_plot(A, r, num_perturbed, **svd_type):
+def svd_free_rank_perturbation_plot(A, num_perturbed, norm_type, svd_type, **svd_type_kwargs):
 
     """
     Generates scatter plot of perturbed matrices (with any rank) distance from A against distance from optimal rank-r approximation
 
     Parameters:
     A (nested list of depth 2): The original matrix 
-    r (int): The rank of the approximation
     num_perturbed: The number of perturbated matrices to be plotted
+    norm_type: Norm to be used. eg: 'fro' (Frobenius), 2 (Spectral)
+    svd_type: SVD approx to be used. eg: 'svd_optimal' , 'svd_randomised'
+    **svd_type_kwargs: The required parameters for the chosen svd_type
 
     Returns:
     A scatter plot (shows how rank-r approx. is not necessarily best approx. amongst all ranks)
     """
 
-    A_r, U_r, S_r, Vt_r = svd_optimal_rankr(A, r)
+    A_r, U_r, S_r, Vt_r = svd_type(A, **svd_type_kwargs)
 
 # list of perturbed matrices. vectored using 3D numpy array instead of loop
     A_perturbed = A_r + np.random.normal(0, 0.05*S_r[0,0], (num_perturbed, A_r.shape[0], A_r.shape[1]))
 
 # x-axis: distance (Frobenius) of perturbed matrix from optimal rank-r truncation
-    distance_approx = np.linalg.norm(A_perturbed - A_r, 'fro', axis=(1,2))
-    distance_true = np.linalg.norm(A_perturbed - A, 'fro', axis=(1,2))
-    
+    distance_approx = np.linalg.norm(A_perturbed - A_r, norm_type, axis=(1,2))
+    distance_true = np.linalg.norm(A_perturbed - A, norm_type, axis=(1,2))
+
+    r = svd_type_kwargs["r"]
     plt.scatter(distance_approx, distance_true, color='blue', s=20)
-    plt.scatter([0], svd_error_rankr(A, r), color='red')
+    plt.scatter([0], svd_error(A, norm_type, svd_type, **svd_type_kwargs), color='red')
     plt.xlabel(f"Frobenius dist. from rank-{r} optimal sol.")
     plt.ylabel("Frobenius dist. from true matrix")
     plt.title("Perturbation Scatter")
@@ -119,32 +126,67 @@ def svd_free_rank_perturbation_plot(A, r, num_perturbed, **svd_type):
 
 ###########################################################################################################################################################################
 
+def svd_error_optimal(A, r, norm_type):
+
+    """
+    Computes Frobenius distance of rank-r approximation and the original matrix
+
+    Parameters:
+    A (nested list of depth 2): The original matrix 
+    r (int): The rank of the approximation
+
+    Returns:
+    error (float): The error in the Frobenius norm
+    """
+
+    A_r, U_r, S_r, Vt_r = svd_optimal(A, r)
+    error = np.linalg.norm(A_r - A, norm_type)
+
+    return error
+
+
+
 import pandas as pd
 
-
-def error_ranksize_table(r, n, dist, **dist_kwargs):
+def error_ranksize_table_optimal(r_max, n_max, norm_type, dist, **dist_kwargs):
 
     """
     Generates table showing error between original matrix of size (nxn) and optimal rank-r approximation 
 
     Parameters:
-    r (int): The highest rank approximation desired
-    n (int): The greatest number of rows for the matrix being approximated
+    r_max (int): The highest rank approximation desired
+    n_max (int): The greatest number of rows for the matrix being approximated
     dist: The desired distribution - X - of entries, of the form np.random.X
     **dist_kwargs: The required parameters for the chosen distribution
 
     Returns:
     Table showing the error for each rank r and size nxn respectively 
     """
-    rank_list = np.arange(1, r+1, 1)
-    size_list = [f"{i}x{i}" for i in range(1, n+1, 1)]
-    matrix_list = [dist(size=(i, i), **dist_kwargs) for i in range(1, n+1)]
+    rank_list = np.arange(1, r_max+1, 1)
+    size_list = [f"{i}x{i}" for i in range(1, n_max+1, 1)]
+    matrix_list = [dist(size=(i, i), **dist_kwargs) for i in range(1, n_max+1)]
 
-    rankr_error_table = np.array([ [svd_error_rankr(matrix_list[j], rank_list[i]) for j in range(n)] for i in range(r)])
+    rankr_error_table = np.array([ [svd_error_optimal(matrix_list[j], rank_list[i], norm_type) for j in range(n_max)] for i in range(r_max)])
 
     table = pd.DataFrame(rankr_error_table, index=rank_list, columns=size_list)
-
     print(table)
+
+    plt.figure(figsize=(12, 6))
+    plt.imshow(table, cmap="Reds", aspect="auto") 
+    plt.colorbar(label="Error")
+
+    for i in range(table.shape[0]):
+        for j in range(table.shape[1]):
+            plt.text(j, i, f"{table.iloc[i, j]:.2f}",
+                    ha="center", va="center")
+
+    plt.xticks(np.arange(len(table.columns)), table.columns, rotation=45)
+    plt.yticks(np.arange(len(table.index)), table.index)
+
+    plt.xlabel("matrix size")
+    plt.ylabel("rank")
+    plt.title("Rank-r approximation error")
+    plt.show()
 
 
 
@@ -164,7 +206,7 @@ def error_ranksize_plot(r, n, dist, **dist_kwargs):
     """
 
     matrix_list = [dist(size=(i, i), **dist_kwargs) for i in range(1, n+1)]
-    rankr_error_list = np.array([svd_error_rankr(matrix_list[j], r) for j in range(n)])
+    rankr_error_list = np.array([svd_error_optimal(matrix_list[j], r, 'fro') for j in range(n)])
     
     index_list = np.arange(1, n+1, 1)
 
@@ -237,7 +279,7 @@ def svd_fixed_rank_perturbation_plot(A, r, num_perturbed, rotation=False):
     A scatter plot that shows optimality of A_r for that fixed rank r
     """
 
-    A_r, U_r, S_r, Vt_r = svd_optimal_rankr(A, r)
+    A_r, U_r, S_r, Vt_r = svd_optimal(A, r)
 
     S_r = list(np.diag(S_r))
 
@@ -258,11 +300,11 @@ def svd_fixed_rank_perturbation_plot(A, r, num_perturbed, rotation=False):
 
     if rotation: 
 
-        Q_1, R_1 = np.linalg.qr(np.random.normal(0, 10**-5, (U_r.shape[0], Vt_r.shape[1])))
+        Q_1, R_1 = np.linalg.qr(np.random.normal(0, 10**(-20), (A.shape[0], A.shape[0])))
         if np.linalg.det(Q_1) < 0:
             Q_1[:, 0] = -Q_1[:, 0]
 
-        Q_2, R_2 = np.linalg.qr(np.random.normal(0, 10**-5, (U_r.shape[0], Vt_r.shape[1])))
+        Q_2, R_2 = np.linalg.qr(np.random.normal(0, 10**(-20), (A.shape[1], A.shape[1])))
         if np.linalg.det(Q_2) < 0:
             Q_2[:, 0] = -Q_2[:, 0]
         
@@ -272,7 +314,7 @@ def svd_fixed_rank_perturbation_plot(A, r, num_perturbed, rotation=False):
         distance_true = np.linalg.norm(A_r_pert_list - A, 'fro', axis=(1,2))
 
         plt.scatter(distance_approx, distance_true, color='blue', s=20)
-        plt.scatter([0], svd_error_rankr(A, r), color='red')
+        plt.scatter([0], svd_error_optimal(A, r, 'fro'), color='red')
         plt.xlabel(f"Frobenius dist. from rank-{r} optimal sol.")
         plt.ylabel("Frobenius dist. from true matrix")
         plt.title("Rank-r Perturbation Scatter")
@@ -284,11 +326,12 @@ def svd_fixed_rank_perturbation_plot(A, r, num_perturbed, rotation=False):
         distance_true = np.linalg.norm(A_r_pert_list - A, 'fro', axis=(1,2))
 
         plt.scatter(distance_approx, distance_true, color='blue', s=20)
-        plt.scatter([0], svd_error_rankr(A, r), color='red')
+        plt.scatter([0], svd_error_optimal(A, r, 'fro'), color='red')
         plt.xlabel(f"Frobenius dist. from rank-{r} optimal sol.")
         plt.ylabel("Frobenius dist. from true matrix")
         plt.title("Rank-r Perturbation Scatter")
         plt.show()
+
 
 
 ###########################################################################################################################################################################
@@ -371,7 +414,7 @@ def expected_squared_error_theoretical(n, m, r, dist, **dist_kwargs):
 def expected_squared_error_empirical_verification(n, m, r, k, dist, prnt=False, **dist_kwargs):
 
     matrix_list = dist(size=(k, n, m), **dist_kwargs)
-    error_list = np.array([svd_error_rankr(A, r)**2 for A in matrix_list])
+    error_list = np.array([svd_error_optimal(A, r, 'fro')**2 for A in matrix_list])
 
     mean_error = (1 / m) * np.mean(error_list)
 
@@ -387,7 +430,7 @@ def expected_squared_error_empirical_verification(n, m, r, k, dist, prnt=False, 
 
     return mean_error
 
-expected_squared_error_empirical_verification(5, 4, 0, 1000, np.random.normal, prnt=True, loc=0, scale=1)
+
 
 def expected_squared_error_empirical_verification_plot(n, m, r, trials_x100, dist, **dist_kwargs):
 
@@ -408,9 +451,9 @@ if __name__ == "__main__":
 
     A = random_matrix((3,4), np.random.normal, loc=0, scale=1)
 
-    svd_free_rank_perturbation_plot(A,1,1500) 
-    svd_free_rank_perturbation_plot(A,2,1500) 
-    svd_free_rank_perturbation_plot(A,3,1500) 
+    svd_free_rank_perturbation_plot(A, 1500, 'fro', svd_optimal, r=1) 
+    svd_free_rank_perturbation_plot(A, 1500, 'fro', svd_optimal, r=2) 
+    svd_free_rank_perturbation_plot(A, 1500, 'fro', svd_optimal, r=3) 
 
     error_ranksize_plot(10,100, np.random.normal, loc=0, scale=1)
     error_ranksize_plot(200,200, np.random.normal, loc=0, scale=1)
