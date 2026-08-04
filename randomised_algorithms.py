@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-import SVD_investigation as svd
+import svd_investigation as svd
 
 
 # Original matrix A has dim mxn
@@ -57,59 +57,7 @@ def svd_random(A, r, q):
 
 
 
-def svd_error_random(A, r, q, norm_type): 
-
-    A_randsvd, U, S, V_t = svd_random(A, r, q) 
-    error = np.linalg.norm(A_randsvd - A, norm_type) 
-
-    return error
-
-
-
-def error_ranksize_table_random(r_max, n_max, q, norm_type, dist, **dist_kwargs):
-
-    rank_list = np.arange(2, r_max+1, 2)
-    size_list = [f"{i}x{i}" for i in range(1, n_max+1, 1)]
-    matrix_list = [dist(size=(i, i), **dist_kwargs) for i in range(1, n_max+1)]
-
-    rankr_error_table = np.array([ [svd_error_random(matrix_list[j], rank_list[i], q, norm_type) for j in range(n_max)] for i in range(r_max//2)])
-
-    table = pd.DataFrame(rankr_error_table, index=rank_list, columns=size_list)
-    print(table)
-
-    plt.figure(figsize=(12, 6))
-    plt.imshow(table, cmap="Reds", aspect="auto") 
-    plt.colorbar(label="Error")
-
-    for i in range(table.shape[0]):
-        for j in range(table.shape[1]):
-            plt.text(j, i, f"{table.iloc[i, j]:.2f}",
-                    ha="center", va="center")
-
-    plt.xticks(np.arange(len(table.columns)), table.columns, rotation=45)
-    plt.yticks(np.arange(len(table.index)), table.index)
-
-    plt.xlabel("matrix size")
-    plt.ylabel("rank")
-    plt.title("Rank-r approximation error")
-    plt.show()
-
-
-
-def error_ranksize_plot_random(r, n_max, q, norm_type, dist, **dist_kwargs):
-
-    matrix_list = [dist(size=(i, i), **dist_kwargs) for i in range(1, n_max+1)]
-    rankr_error_list = np.array([svd_error_random(matrix_list[j], r, q, norm_type) for j in range(n_max)])
-    
-    index_list = np.arange(1, n_max+1, 1)
-
-    plt.scatter(index_list, rankr_error_list, color='red', s=20)
-    plt.xlabel("#rows of the square matrix")
-    plt.ylabel("Error in approx.")
-    plt.title("Error against size (fixed rank)")
-    plt.show()
-
-
+###########################################################################################################################################################################
 
 if __name__ == "__main__": 
 # Testing on Gaussian matrices

@@ -57,7 +57,7 @@ def svd_error(A, norm_type, svd_type, svd_type_kwargs):
     A (nested list of depth 2): The original matrix 
     r (int): The rank of the approximation
     norm_type: Norm to be used. eg: 'fro' (Frobenius), 2 (Spectral)
-    svd_type: SVD approx to be used. eg: 'svd_optimal' , 'svd_randomised'
+    svd_type: SVD approx to be used. eg: 'svd_optimal' , 'svd_random'
     svd_type_kwargs: Dictionary of the required parameters for the chosen svd_type 
 
     Returns:
@@ -65,7 +65,7 @@ def svd_error(A, norm_type, svd_type, svd_type_kwargs):
     """
 
     A_r, U_r, S_r, Vt_r = svd_type(A, **svd_type_kwargs)
-    error = np.linalg.norm(A_r - A, norm_type)
+    error = np.linalg.norm(A_r - A, ord=norm_type)
 
     return error
 
@@ -100,7 +100,7 @@ def svd_free_rank_perturbation_plot(A, r, num_perturbed, norm_type, svd_type, sv
     A (nested list of depth 2): The original matrix 
     num_perturbed: The number of perturbated matrices to be plotted
     norm_type: Norm to be used. eg: 'fro' (Frobenius), 2 (Spectral)
-    svd_type: SVD approx to be used. eg: 'svd_optimal' , 'svd_randomised'
+    svd_type: SVD approx to be used. eg: 'svd_optimal' , 'svd_random'
     svd_type_kwargs: The required parameters for the chosen svd_type
 
     Returns:
@@ -113,8 +113,8 @@ def svd_free_rank_perturbation_plot(A, r, num_perturbed, norm_type, svd_type, sv
     A_perturbed = A_r + np.random.normal(0, 0.05*S_r[0,0], (num_perturbed, A_r.shape[0], A_r.shape[1]))
 
 # x-axis: distance (Frobenius) of perturbed matrix from optimal rank-r truncation
-    distance_approx = np.linalg.norm(A_perturbed - A_r, norm_type, axis=(1,2))
-    distance_true = np.linalg.norm(A_perturbed - A, norm_type, axis=(1,2))
+    distance_approx = np.linalg.norm(A_perturbed - A_r, ord=norm_type, axis=(1,2))
+    distance_true = np.linalg.norm(A_perturbed - A, ord=norm_type, axis=(1,2))
 
     plt.scatter(distance_approx, distance_true, color='blue', s=20)
     plt.scatter([0], svd_error(A, r, norm_type, svd_type, svd_type_kwargs), color='red')
@@ -147,7 +147,7 @@ def svd_error(A, r, norm_type, svd_type, svd_type_kwargs):
 
     A_r, U_r, S_r, Vt_r = svd_type(A, r, **svd_type_kwargs)
 
-    error = np.linalg.norm(A_r - A, norm_type)
+    error = np.linalg.norm(A_r - A, ord=norm_type)
 
     return error
 
@@ -319,8 +319,8 @@ def svd_fixed_rank_perturbation_plot(A, r, norm_type, num_perturbed, svd_type, s
         
         A_r_pert_list = Q_1 @ A_r_pert_list @ Q_2
 
-        distance_approx = np.linalg.norm(A_r_pert_list - A_r, norm_type, axis=(1,2))
-        distance_true = np.linalg.norm(A_r_pert_list - A, norm_type, axis=(1,2))
+        distance_approx = np.linalg.norm(A_r_pert_list - A_r, ord=norm_type, axis=(1,2))
+        distance_true = np.linalg.norm(A_r_pert_list - A, ord=norm_type, axis=(1,2))
 
         plt.scatter(distance_approx, distance_true, color='blue', s=20)
         plt.scatter([0], svd_error(A, r, norm_type, svd_type, svd_type_kwargs), color='red')
@@ -455,6 +455,59 @@ def expected_squared_error_empirical_verification_plot(n, m, r, trials_x100, dis
 
 
 ###########################################################################################################################################################################
+
+# Original matrix A has dim mxn
+# Rank-2k approx.
+
+# Stage-A of prototype for randomised SVD 
+def stage_A(A, k, q):
+
+    test_matrix = np.random.normal(0, 1, (A.shape[1], 2*k))
+
+    Y = A @ test_matrix  
+
+    # Orthonormalisation step between each multiplication of A and A* (as per note)
+    Q, _ = np.linalg.qr(Y, mode='reduced')
+    
+    for _ in range(q):
+       
+        Q = A.conj().T @ Q   
+        Q, _ = np.linalg.qr(Q, mode='reduced')
+        
+        Q = A @ Q  
+        Q, _ = np.linalg.qr(Q, mode='reduced')
+
+    return Q
+
+
+# Stage-B of prototype for randomised SVD
+def stage_B(A, k, q):
+
+    Q = stage_A(A, k, q)
+
+    B = Q.conj().T @ A
+    U_B, S, V_t = np.linalg.svd(B, full_matrices=False)
+    S = np.diag(S)
+
+    U = Q @ U_B
+
+    return U, S, V_t
+
+
+# Final rank-r factorisation using randomised SVD (r must be integer multiple of 2)
+def svd_random(A, r, q):
+
+    if r % 2 != 0:
+        return None
+
+    U, S, V_t = stage_B(A, r//2, q)
+    A_randsvd = U @ S @ V_t
+
+    return A_randsvd, U, S, V_t
+
+
+
+###########################################################################################################################################################################
    
 if __name__ == "__main__":
 # Testing on Gaussian matrices
@@ -477,16 +530,3 @@ if __name__ == "__main__":
     svd_fixed_rank_perturbation_plot(A, 2, 'fro', 1500, svd_optimal, {}, True) 
     svd_fixed_rank_perturbation_plot(A, 3, 'fro', 1500, svd_optimal, {}, True) 
 
-    print(f'rank 0 expected suared error is: {expected_squared_error_theoretical(5,4, 0, np.random.normal, loc=0, scale=1)}')
-    print(f'rank 1 expected suared error is: {expected_squared_error_theoretical(5,4, 1, np.random.normal, loc=0, scale=1)}')
-    print(f'rank 2 expected suared error is: {expected_squared_error_theoretical(5,4, 2, np.random.normal, loc=0, scale=1)}')
-    print(f'rank 3 expected suared error is: {expected_squared_error_theoretical(5,4, 3, np.random.normal, loc=0, scale=1)}')
-    print(f'rank 4 expected suared error is: {expected_squared_error_theoretical(5,4, 4, np.random.normal, loc=0, scale=1)}')
-
-    expected_squared_error_empirical_verification(5, 4, 0, 1000, np.random.normal, prnt=True, loc=0, scale=1)
-    expected_squared_error_empirical_verification(5, 4, 1, 1000, np.random.normal, prnt=True, loc=0, scale=1)
-    expected_squared_error_empirical_verification(5, 4, 2, 1000, np.random.normal, prnt=True, loc=0, scale=1)
-    expected_squared_error_empirical_verification(5, 4, 3, 1000, np.random.normal, prnt=True, loc=0, scale=1)
-    expected_squared_error_empirical_verification(5, 4, 4, 1000, np.random.normal, prnt=True, loc=0, scale=1)
-
-    expected_squared_error_empirical_verification_plot(5, 4, 3, 500, np.random.normal, loc=0, scale=1)
