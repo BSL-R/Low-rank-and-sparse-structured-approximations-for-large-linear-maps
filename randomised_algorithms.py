@@ -48,7 +48,7 @@ def stage_B(A, k, q):
 def svd_random(A, r, q):
 
     if r % 2 != 0:
-        raise ValueError("rank, r, must be an even integer.")
+        return None
 
     U, S, V_t = stage_B(A, r//2, q)
     A_randsvd = U @ S @ V_t
@@ -109,26 +109,37 @@ def error_ranksize_plot_random(r, n_max, q, norm_type, dist, **dist_kwargs):
     plt.title("Error against size (fixed rank)")
     plt.show()
 
-error_ranksize_plot_random(100, 200, 2, 'fro', np.random.normal, loc=0, scale=1)
 
 
 if __name__ == "__main__": 
 # Testing on Gaussian matrices
 
-    A = svd.random_matrix((6,6), np.random.normal, loc=0, scale=1)
+    A = svd.random_matrix((5,6), np.random.normal, {'loc':0, 'scale':1})
 
+    svd.svd_free_rank_perturbation_plot(A, 2, 1000, 'fro', svd_random, {'q':0})
+    svd.svd_free_rank_perturbation_plot(A, 2, 1000, 'fro', svd_random, {'q':1})
+    svd.svd_free_rank_perturbation_plot(A, 2, 1000, 'fro', svd_random, {'q':2})
 
-    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=2, q=0)
-    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=2, q=1)
-    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=2, q=2)
+    svd.svd_free_rank_perturbation_plot(A, 4, 1000, 'fro', svd_random, {'q':0})
+    svd.svd_free_rank_perturbation_plot(A, 4, 1000, 'fro', svd_random, {'q':1})
+    svd.svd_free_rank_perturbation_plot(A, 4, 1000, 'fro', svd_random, {'q':2})
 
-    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=4, q=0)
-    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=4, q=1)
-    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=4, q=2)
+    svd.svd_free_rank_perturbation_plot(A, 6, 1000, 'fro', svd_random, {'q':0})
+    svd.svd_free_rank_perturbation_plot(A, 6, 1000, 'fro', svd_random, {'q':1}) 
+    svd.svd_free_rank_perturbation_plot(A, 6, 1000, 'fro', svd_random, {'q':2}) 
 
-    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=6, q=0)
-    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=6, q=1) 
-    svd.svd_free_rank_perturbation_plot(A, 1000, 'fro', svd_random, r=6, q=2)  
+    svd.error_ranksize_table(5, 5, 'fro', svd_random, {'q':0}, np.random.normal, {'loc':0, 'scale':1}) 
+    svd.error_ranksize_table(5, 5, 'fro', svd_random, {'q':1}, np.random.normal, {'loc':0, 'scale':1}) 
+    svd.error_ranksize_table(5, 5, 'fro', svd_random, {'q':2}, np.random.normal, {'loc':0, 'scale':1}) 
 
-    error_ranksize_table_random(5, 5, 2, 'fro', np.random.normal, loc=0, scale=1)
-    error_ranksize_table_random(50, 50, 2, 'fro', np.random.normal, loc=0, scale=1)
+    svd.error_ranksize_plot(10, 50, 'fro', svd_random, {'q':0}, np.random.normal, {'loc':0, 'scale':1})
+    svd.error_ranksize_plot(10, 50, 'fro', svd_random, {'q':1}, np.random.normal, {'loc':0, 'scale':1})
+    svd.error_ranksize_plot(10, 50, 'fro', svd_random, {'q':2}, np.random.normal, {'loc':0, 'scale':1})
+
+    svd.svd_fixed_rank_perturbation_plot(A, 2, 'fro', 50, svd_random, {'q':0}, False)
+    svd.svd_fixed_rank_perturbation_plot(A, 2, 'fro', 50, svd_random, {'q':1}, False)
+    svd.svd_fixed_rank_perturbation_plot(A, 2, 'fro', 50, svd_random, {'q':2}, False)
+
+    svd.svd_fixed_rank_perturbation_plot(A, 2, 'fro', 50, svd_random, {'q':0}, True)
+    svd.svd_fixed_rank_perturbation_plot(A, 2, 'fro', 50, svd_random, {'q':1}, True)
+    svd.svd_fixed_rank_perturbation_plot(A, 2, 'fro', 50, svd_random, {'q':2}, True)
