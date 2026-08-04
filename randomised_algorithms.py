@@ -65,6 +65,7 @@ def svd_error_random(A, r, q, norm_type):
     return error
 
 
+
 def error_ranksize_table_random(r_max, n_max, q, norm_type, dist, **dist_kwargs):
 
     rank_list = np.arange(2, r_max+1, 2)
@@ -92,8 +93,23 @@ def error_ranksize_table_random(r_max, n_max, q, norm_type, dist, **dist_kwargs)
     plt.ylabel("rank")
     plt.title("Rank-r approximation error")
     plt.show()
-    
 
+
+
+def error_ranksize_plot_random(r, n_max, q, norm_type, dist, **dist_kwargs):
+
+    matrix_list = [dist(size=(i, i), **dist_kwargs) for i in range(1, n_max+1)]
+    rankr_error_list = np.array([svd_error_random(matrix_list[j], r, q, norm_type) for j in range(n_max)])
+    
+    index_list = np.arange(1, n_max+1, 1)
+
+    plt.scatter(index_list, rankr_error_list, color='red', s=20)
+    plt.xlabel("#rows of the square matrix")
+    plt.ylabel("Error in approx.")
+    plt.title("Error against size (fixed rank)")
+    plt.show()
+
+error_ranksize_plot_random(100, 200, 2, 'fro', np.random.normal, loc=0, scale=1)
 
 
 if __name__ == "__main__": 
