@@ -37,19 +37,18 @@ def entry_cifar(i):
 ###########################################################################################################################################################################
 
 
-def image_comparison(i, r, entry_type, svd_type, svd_type_kwargs):
+def image_comparison(A, r, svd_type, svd_type_kwargs):
 
     """
     Produces side-by-side image of original and approx.
 
     Parameters:
-    i (int): The index of the desired MNIST entry
+    A (matrix): The matrix representative of the image
     r (int): The rank of the approximation
     svd_type: SVD approx. method to be used. eg: svd_optimal, svd_random
     svd_type_kwargs:
     """
 
-    A, label = entry_type(i)
     A_r, U_r, S_r, Vt_r = svd_type(A, r, **svd_type_kwargs)
     
 
@@ -62,16 +61,14 @@ def image_comparison(i, r, entry_type, svd_type, svd_type_kwargs):
 
     plt.subplot(1,2,2)
     plt.imshow(A_r, cmap="gray")
-    plt.title(f"Rank-{r} approx., digit:{label}")
+    plt.title(f"Rank-{r} approx.")
     plt.axis("off")
 
     plt.show()
 
 
 
-def error_runtime_comparison(i, r, entry_type, num_iter, norm_type, svd_type1, svd_type1_kwargs, svd_type2, svd_type2_kwargs):
-
-    A, label = entry_type(i)
+def error_runtime_comparison(A, r, num_iter, norm_type, svd_type1, svd_type1_kwargs, svd_type2, svd_type2_kwargs):
 
     error1_list = np.empty(num_iter)
     error2_list = np.empty(num_iter)
@@ -114,9 +111,7 @@ def error_runtime_comparison(i, r, entry_type, num_iter, norm_type, svd_type1, s
 
 
 
-def error_runtime_comparison_plot(i, entry_type, r_max, num_iter, norm_type, svd_type1, svd_type1_kwargs, svd_type2, svd_type2_kwargs):
-
-    A, label = entry_type(i)
+def error_runtime_comparison_plot(A, r_max, num_iter, norm_type, svd_type1, svd_type1_kwargs, svd_type2, svd_type2_kwargs):
 
     error1_list = np.empty(r_max)
     error2_list = np.empty(r_max)
@@ -124,8 +119,8 @@ def error_runtime_comparison_plot(i, entry_type, r_max, num_iter, norm_type, svd
     runtime2_list = np.empty(r_max)
 
     for k in range(r_max):
-
-        error1, error2, runtime1, runtime2 = error_runtime_comparison(i, k, entry_type, num_iter, norm_type, svd_type1, svd_type1_kwargs, svd_type2, svd_type2_kwargs)
+        
+        error1, error2, runtime1, runtime2 = error_runtime_comparison(A, k, num_iter, norm_type, svd_type1, svd_type1_kwargs, svd_type2, svd_type2_kwargs)
 
         error1_list[k] = error1
         error2_list[k] = error2
@@ -142,10 +137,22 @@ def error_runtime_comparison_plot(i, entry_type, r_max, num_iter, norm_type, svd
 
 
 
+def tiled_matrix(rows, cols, entry_type, start):
 
-error_runtime_comparison_plot(12345, entry_cifar, 15, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})
+    images = []
+    k = start
 
-image_comparison(140, 10, entry_cifar, svd.svd_optimal, {})
+    for i in range(rows):
+        row = []
+        for j in range(cols):
+            A, label = entry_type(k)
+            row.append(A)
+            k = k + 1
+        images.append(np.hstack(row))
+
+    A = np.vstack(images)
+
+    return A
 
 
 
@@ -153,16 +160,19 @@ image_comparison(140, 10, entry_cifar, svd.svd_optimal, {})
    
 if __name__ == "__main__":
 
-    image_comparison(12345, 10, entry_mnist, svd.svd_optimal, {})
-    image_comparison(12345, 10, entry_mnist, svd.svd_random, {'q':0})
-    image_comparison(12345, 10, entry_mnist, svd.svd_random, {'q':1})
-    image_comparison(12345, 10, entry_mnist, svd.svd_random, {'q':2})
+    A, label = entry_mnist(12345)
+    image_comparison(A, 10, svd.svd_optimal, {})
+    image_comparison(A, 10, svd.svd_random, {'q':0})
+    image_comparison(A, 10, svd.svd_random, {'q':1})
+    image_comparison(A, 10, svd.svd_random, {'q':2})
 
-    distance1, distance2, runtime1, runtime2 = error_runtime_comparison(12345, 10, entry_mnist, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})
+    distance1, distance2, runtime1, runtime2 = error_runtime_comparison(A, 10, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})
     print(f'Avg. distance from original matrix: method1 = {distance1}, method2 = {distance2}\nAvg. runtime diff. (method1 - method2) = {runtime1 - runtime2} seconds')
-    distance1, distance2, runtime1, runtime2 = error_runtime_comparison(12345, 10, entry_mnist, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':1})
+    distance1, distance2, runtime1, runtime2 = error_runtime_comparison(A, 10, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':1})
     print(f'Avg. distance from original matrix: method1 = {distance1}, method2 = {distance2}\nAvg. runtime diff. (method1 - method2) = {runtime1 - runtime2} seconds')
-    distance1, distance2, runtime1, runtime2 = error_runtime_comparison(12345, 10, entry_mnist, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':2})
+    distance1, distance2, runtime1, runtime2 = error_runtime_comparison(A, 10, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':2})
     print(f'Avg. distance from original matrix: method1 = {distance1}, method2 = {distance2}\nAvg. runtime diff. (method1 - method2) = {runtime1 - runtime2} seconds')
 
-    error_runtime_comparison_plot(12345, entry_mnist, 15, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})
+    error_runtime_comparison_plot(A, 15, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})
+    A = tiled_matrix(3, 3, entry_mnist, 2) #84x84 matrix
+    error_runtime_comparison_plot(A, 40, 100, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})
