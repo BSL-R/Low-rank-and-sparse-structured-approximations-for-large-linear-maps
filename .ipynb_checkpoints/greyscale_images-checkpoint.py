@@ -155,8 +155,7 @@ def tiled_matrix(rows, cols, entry_type, start):
     return A
 
 
-A = tiled_matrix(3, 3, entry_mnist, 2) #84x84 matrix
-error_runtime_comparison_plot(A, 84, 100, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})
+
 ###########################################################################################################################################################################
    
 if __name__ == "__main__":
@@ -176,4 +175,4 @@ if __name__ == "__main__":
 
     error_runtime_comparison_plot(A, 15, 1000, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})
     A = tiled_matrix(3, 3, entry_mnist, 2) #84x84 matrix
-    error_runtime_comparison_plot(A, 84, 100, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})
+    error_runtime_comparison_plot(A, 40, 100, 'fro', svd.svd_optimal, {}, svd.svd_random, {'q':0})

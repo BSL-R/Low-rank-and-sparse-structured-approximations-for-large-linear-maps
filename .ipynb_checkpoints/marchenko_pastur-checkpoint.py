@@ -76,7 +76,6 @@ def expected_squared_error_theoretical(n, m, r, dist, **dist_kwargs):
 
     return expected_error
 
-expected_squared_error_theoretical(4, 3, 3, np.random.normal, loc=0, scale=1)
 
 
 def expected_squared_error_empirical_verification(n, m, r, k, dist, prnt=False, **dist_kwargs):
