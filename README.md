@@ -11,3 +11,10 @@ The theoretical foundations for this notebook draw on the following key works:
 >Carl Eckart, Gale Young (1936). "The approximation of one matrix by another of lower rank", Psychometrika, 1(3), 211–218.
 
 >Vladimir A. Marchenko, Leonid A. Pastur (1967). "Distribution of eigenvalues in certain sets of random matrices", Matematicheskii Sbornik, 114(4), 507–536.
+
+## How to Run
+
+To run this notebook, the dependencies listed in [`requirements.txt`](requirements.txt) are necessary.
+It is recommended to use a virtual environment when running this notebook. After creating and activating your environment, install the required packages using:
+
+pip install -r requirements.txt
