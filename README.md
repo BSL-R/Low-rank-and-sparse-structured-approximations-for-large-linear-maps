@@ -17,4 +17,4 @@ The theoretical foundations for this notebook draw on the following key works:
 To run this notebook, the dependencies listed in [`requirements.txt`](requirements.txt) are necessary.
 It is recommended to use a virtual environment when running this notebook. After creating and activating your environment, install the required packages using:
 
-pip install -r requirements.txt
+`pip install -r requirements.txt`
