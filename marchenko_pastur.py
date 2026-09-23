@@ -5,7 +5,7 @@ from scipy.optimize import root_scalar
 
 import svd_investigation as svd
 
-# Marchenko-Patur Law investigation (particular to Frobenius norm and svd_optimal)
+# Marchenko-Pastur Law investigation (particular to Frobenius norm and svd_optimal)
 
 def mp_pdf(mu, lam, dist, **dist_kwargs):
 
